@@ -9,6 +9,25 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    // Check if QRCode library loaded successfully
+    window.addEventListener('load', function() {
+      if (typeof QRCode === 'undefined') {
+        console.error('QRCode library failed to load');
+        // Load fallback QR library
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+        script.onload = function() {
+          console.log('QRCode library loaded via fallback');
+          // Trigger QR generation after fallback loads
+          setTimeout(() => {
+            if (window.generateQRCodes) window.generateQRCodes();
+          }, 100);
+        };
+        document.head.appendChild(script);
+      }
+    });
+  </script>
   <style>
     /* CSS Variables matching QIPortal theme */
     :root {
@@ -738,24 +757,58 @@
          'gofundme-qr': 'https://www.gofundme.com/f/breaking-silence-i-need-your-help-to-survive/donate?attribution_id=sl%3Af675e7e8-b610-4927-9308-f63235aa29c7&utm_campaign=unknown&utm_medium=undefined&utm_source=undefined'
        };
 
-       // Generate each QR code
-       Object.entries(qrCodes).forEach(([elementId, url]) => {
-         const element = document.getElementById(elementId);
-         if (element && url !== '#') {
-           QRCode.toCanvas(element, url, {
-             width: 100,
-             margin: 2,
-             color: {
-               dark: '#000000',
-               light: '#FFFFFF'
-             }
-           }, function (error) {
-             if (error) {
-               console.error('Error generating QR code for', elementId, error);
-             }
-           });
+       // Function to generate QR codes with retry logic
+       function generateQRCodes() {
+         // Check if QRCode library is available
+         if (typeof QRCode === 'undefined') {
+           console.error('QRCode library not available');
+           return;
          }
-       });
+
+         Object.entries(qrCodes).forEach(([elementId, url]) => {
+           const element = document.getElementById(elementId);
+           if (element && url !== '#') {
+             // Clear any existing content
+             element.innerHTML = '';
+             
+             try {
+               QRCode.toCanvas(element, url, {
+                 width: 100,
+                 margin: 2,
+                 color: {
+                   dark: '#000000',
+                   light: '#FFFFFF'
+                 }
+               }, function (error) {
+                 if (error) {
+                   console.error('Error generating QR code for', elementId, error);
+                   // Add fallback text if QR generation fails
+                   element.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 12px;">QR Error</div>';
+                 } else {
+                   console.log('Successfully generated QR code for', elementId);
+                 }
+               });
+             } catch (e) {
+               console.error('Exception generating QR code for', elementId, e);
+               element.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 12px;">QR Error</div>';
+             }
+           } else if (element && url === '#') {
+             // Show placeholder for missing URLs
+             element.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 12px;">Coming Soon</div>';
+           }
+         });
+       }
+
+       // Make function globally accessible
+       window.generateQRCodes = generateQRCodes;
+
+       // Try to generate QR codes immediately
+       generateQRCodes();
+
+       // Also try after a short delay to ensure DOM is ready
+       setTimeout(generateQRCodes, 100);
+       setTimeout(generateQRCodes, 500);
+       setTimeout(generateQRCodes, 1000);
      });
   </script>
 </body>
