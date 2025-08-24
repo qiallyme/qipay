@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>QiPay — Payment Portal</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Secure payment portal for QiPay services. Multiple payment options available.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    /* CSS Variables matching QIPortal theme */
+    :root {
+      --bg: 15 23 42;
+      --panel: 30 41 59;
+      --text: 248 250 252;
+      --subtext: 148 163 184;
+      --ring: 51 65 85;
+      --primary: 59 130 246;
+      --accent: 147 51 234;
+    }
+
+    * { 
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body { 
+      height: 100%;
+      font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+      background-color: rgb(var(--bg));
+      color: rgb(var(--text));
+      overflow-x: hidden;
+    }
+
+    /* Animated background with stars */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent),
+        radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.4), transparent),
+        radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.3), transparent),
+        radial-gradient(2px 2px at 160px 30px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 200px 120px, rgba(255,255,255,0.3), transparent),
+        radial-gradient(2px 2px at 240px 60px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 280px 100px, rgba(255,255,255,0.3), transparent);
+      background-repeat: repeat;
+      background-size: 300px 200px;
+      animation: twinkle 4s ease-in-out infinite;
+      z-index: -2;
+    }
+
+    /* Hero gradient overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgb(15 23 42) 0%, rgb(30 58 138) 50%, rgb(88 28 135) 100%);
+      opacity: 0.8;
+      z-index: -1;
+    }
+
+    /* Glow radial effect */
+    .glow-radial {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Floating blobs */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(40px);
+      opacity: 0.3;
+      z-index: -1;
+    }
+
+    .blob-1 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+      top: 20%;
+      left: 10%;
+      animation: blob 7s infinite;
+    }
+
+    .blob-2 {
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(147, 51, 234, 0.3) 0%, transparent 70%);
+      top: 60%;
+      right: 15%;
+      animation: blob 7s infinite 2s;
+    }
+
+    .blob-3 {
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, transparent 70%);
+      bottom: 20%;
+      left: 20%;
+      animation: blob 7s infinite 4s;
+    }
+
+    /* Navigation */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: rgba(var(--panel), 0.8);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(var(--ring), 0.5);
+      padding: 1rem 2rem;
+    }
+
+    .nav-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: rgb(var(--text));
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .nav-link {
+      color: rgb(var(--subtext));
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: rgb(var(--text));
+    }
+
+    /* Main container */
+    .container {
+      min-height: 100vh;
+      padding: 6rem 2rem 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Hero section */
+    .hero {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(90deg, rgb(var(--text)), rgb(var(--subtext)));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: rgb(var(--subtext));
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Payment grid */
+    .payment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Payment card */
+    .payment-card {
+      background: rgba(var(--panel), 0.8);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(var(--ring), 0.5);
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -4px rgba(0, 0, 0, 0.1),
+        0 1px 0 rgba(255, 255, 255, 0.06) inset;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .payment-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    }
+
+    .payment-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 1px 0 rgba(255, 255, 255, 0.06) inset;
+      border-color: rgba(var(--ring), 0.8);
+    }
+
+    .payment-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 1rem;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 1.5rem;
+      font-size: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .payment-icon::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+      animation: shimmer 3s infinite;
+    }
+
+    .payment-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: rgb(var(--text));
+      text-align: center;
+    }
+
+    .payment-description {
+      color: rgb(var(--subtext));
+      text-align: center;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    /* Payment button */
+    .payment-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0.875rem 1.5rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      color: white;
+    }
+
+    .payment-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .payment-btn:hover::before {
+      left: 100%;
+    }
+
+         .payment-btn:hover {
+       transform: translateY(-2px);
+     }
+
+     /* QR Container */
+     .qr-container {
+       margin-top: 1.5rem;
+       text-align: center;
+       padding-top: 1.5rem;
+       border-top: 1px solid rgba(var(--ring), 0.3);
+     }
+
+     .qr-code {
+       width: 120px;
+       height: 120px;
+       margin: 0 auto 0.75rem;
+       background: white;
+       border-radius: 0.75rem;
+       padding: 0.5rem;
+       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+     }
+
+     .qr-label {
+       font-size: 0.875rem;
+       color: rgb(var(--subtext));
+       font-weight: 500;
+     }
+
+    /* QR section */
+    .qr-section {
+      margin-top: 4rem;
+      text-align: center;
+    }
+
+    .qr-card {
+      background: rgba(var(--panel), 0.8);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(var(--ring), 0.5);
+      border-radius: 1rem;
+      padding: 2.5rem;
+      box-shadow: 
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -4px rgba(0, 0, 0, 0.1),
+        0 1px 0 rgba(255, 255, 255, 0.06) inset;
+      max-width: 500px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .qr-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    }
+
+    .qr-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: rgb(var(--text));
+    }
+
+    .qr-description {
+      color: rgb(var(--subtext));
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .qr-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.875rem 2rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      background: linear-gradient(135deg, rgb(var(--primary)), rgb(var(--accent)));
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .qr-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 3rem 2rem 2rem;
+      color: rgb(var(--subtext));
+      opacity: 0.7;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .footer-link {
+      color: rgb(var(--subtext));
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .footer-link:hover {
+      color: rgb(var(--text));
+    }
+
+    /* Animations */
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes blob {
+      0% { transform: translate(0) scale(1); }
+      33% { transform: translate(30px, -50px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.9); }
+      100% { transform: translate(0) scale(1); }
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+      
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+      
+      .hero p {
+        font-size: 1.125rem;
+      }
+      
+      .payment-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      
+      .container {
+        padding: 5rem 1rem 1rem;
+      }
+      
+      .footer-links {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.8s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background effects -->
+  <div class="glow-radial"></div>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-content">
+      <a href="./" class="nav-brand">QiPay</a>
+      <div class="nav-links">
+        <a href="https://qially.com" class="nav-link">Client Portal</a>
+        <a href="https://qially.me" class="nav-link">Qially.me</a>
+        <a href="./qr-generator.html" class="nav-link">QR Generator</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <div class="container">
+    <!-- Hero Section -->
+    <div class="hero fade-in">
+      <h1>Pay Securely</h1>
+      <p>Choose your preferred payment method. All transactions are secure and encrypted with enterprise-grade security.</p>
+    </div>
+
+    <!-- Payment Methods Grid -->
+    <div class="payment-grid fade-in">
+      
+      <!-- Cash App -->
+             <div class="payment-card">
+         <div class="payment-icon" style="background: linear-gradient(135deg, #00D632, #00B329);">
+           💰
+         </div>
+         <h3 class="payment-title">Cash App</h3>
+         <p class="payment-description">Send money instantly with Cash App</p>
+         <a href="https://cash.app/$srv1ne" target="_blank" class="payment-btn" style="background: linear-gradient(135deg, #00D632, #00B329);">
+           Pay with Cash App
+         </a>
+         <div class="qr-container">
+           <div id="cashapp-qr" class="qr-code"></div>
+           <p class="qr-label">Scan to pay</p>
+         </div>
+       </div>
+
+      <!-- Zelle -->
+             <div class="payment-card">
+         <div class="payment-icon" style="background: linear-gradient(135deg, #0066CC, #004499);">
+           🏦
+         </div>
+         <h3 class="payment-title">Zelle</h3>
+         <p class="payment-description">Bank-to-bank transfers</p>
+         <a href="mailto:crice4485@gmail.com" class="payment-btn" style="background: linear-gradient(135deg, #0066CC, #004499);">
+           Pay with Zelle
+         </a>
+         <div class="qr-container">
+           <div id="zelle-qr" class="qr-code"></div>
+           <p class="qr-label">Scan to pay</p>
+         </div>
+       </div>
+
+      <!-- PayPal -->
+             <div class="payment-card">
+         <div class="payment-icon" style="background: linear-gradient(135deg, #0070BA, #003087);">
+           💳
+         </div>
+         <h3 class="payment-title">PayPal</h3>
+         <p class="payment-description">Secure online payments</p>
+         <a href="https://www.paypal.com/qrcodes/p2pqrc/EVS7WXML8S3ZL" target="_blank" class="payment-btn" style="background: linear-gradient(135deg, #0070BA, #003087);">
+           Pay with PayPal
+         </a>
+         <div class="qr-container">
+           <div id="paypal-qr" class="qr-code"></div>
+           <p class="qr-label">Scan to pay</p>
+         </div>
+       </div>
+
+      <!-- Square -->
+             <div class="payment-card">
+         <div class="payment-icon" style="background: linear-gradient(135deg, #6B4CE3, #5A3FD1);">
+           🏪
+         </div>
+         <h3 class="payment-title">Square</h3>
+         <p class="payment-description">Professional payment processing</p>
+         <a href="https://square.link/u/qTkK6YbH?src=embed" target="_blank" class="payment-btn" style="background: linear-gradient(135deg, #6B4CE3, #5A3FD1);">
+           Pay with Square
+         </a>
+         <div class="qr-container">
+           <div id="square-qr" class="qr-code"></div>
+           <p class="qr-label">Scan to pay</p>
+         </div>
+       </div>
+
+      <!-- Stripe -->
+             <div class="payment-card">
+         <div class="payment-icon" style="background: linear-gradient(135deg, #6772E5, #5469D4);">
+           💳
+         </div>
+         <h3 class="payment-title">Stripe</h3>
+         <p class="payment-description">Enterprise payment solutions</p>
+         <a href="#" onclick="alert('Stripe payment link coming soon!')" class="payment-btn" style="background: linear-gradient(135deg, #6772E5, #5469D4);">
+           Pay with Stripe
+         </a>
+         <div class="qr-container">
+           <div id="stripe-qr" class="qr-code"></div>
+           <p class="qr-label">Scan to pay</p>
+         </div>
+       </div>
+
+      <!-- QuickBooks -->
+             <div class="payment-card">
+         <div class="payment-icon" style="background: linear-gradient(135deg, #2CA01C, #1F7A16);">
+           📊
+         </div>
+         <h3 class="payment-title">QuickBooks</h3>
+         <p class="payment-description">Business payment processing</p>
+         <a href="#" onclick="alert('QuickBooks payment link coming soon!')" class="payment-btn" style="background: linear-gradient(135deg, #2CA01C, #1F7A16);">
+           Pay with QuickBooks
+         </a>
+         <div class="qr-container">
+           <div id="quickbooks-qr" class="qr-code"></div>
+           <p class="qr-label">Scan to pay</p>
+         </div>
+       </div>
+
+      <!-- eBay -->
+             <div class="payment-card">
+         <div class="payment-icon" style="background: linear-gradient(135deg, #E53238, #C31F25);">
+           🛒
+         </div>
+         <h3 class="payment-title">eBay</h3>
+         <p class="payment-description">Shop our eBay store</p>
+         <a href="https://www.ebay.com/usr/codyr.me" target="_blank" class="payment-btn" style="background: linear-gradient(135deg, #E53238, #C31F25);">
+           Visit eBay Store
+         </a>
+         <div class="qr-container">
+           <div id="ebay-qr" class="qr-code"></div>
+           <p class="qr-label">Scan to visit</p>
+         </div>
+       </div>
+
+      <!-- Zoho Billing -->
+             <div class="payment-card">
+         <div class="payment-icon" style="background: linear-gradient(135deg, #FF6B35, #E55A2B);">
+           📋
+         </div>
+         <h3 class="payment-title">Zoho Billing</h3>
+         <p class="payment-description">Complete billing solution</p>
+         <a href="#" onclick="alert('Zoho Billing link coming soon!')" class="payment-btn" style="background: linear-gradient(135deg, #FF6B35, #E55A2B);">
+           Zoho Billing
+         </a>
+         <div class="qr-container">
+           <div id="zoho-qr" class="qr-code"></div>
+           <p class="qr-label">Scan to access</p>
+         </div>
+       </div>
+
+      <!-- GoFundMe -->
+             <div class="payment-card">
+         <div class="payment-icon" style="background: linear-gradient(135deg, #00D4AA, #00B894);">
+           ❤️
+         </div>
+         <h3 class="payment-title">GoFundMe</h3>
+         <p class="payment-description">Support our cause</p>
+         <a href="https://www.gofundme.com/f/breaking-silence-i-need-your-help-to-survive/donate?attribution_id=sl%3Af675e7e8-b610-4927-9308-f63235aa29c7&utm_campaign=unknown&utm_medium=undefined&utm_source=undefined" target="_blank" class="payment-btn" style="background: linear-gradient(135deg, #00D4AA, #00B894);">
+           Support on GoFundMe
+         </a>
+         <div class="qr-container">
+           <div id="gofundme-qr" class="qr-code"></div>
+           <p class="qr-label">Scan to support</p>
+         </div>
+       </div>
+
+    </div>
+
+    <!-- QR Code Section -->
+    <div class="qr-section fade-in">
+      <div class="qr-card">
+        <h2 class="qr-title">Quick QR Code Access</h2>
+        <p class="qr-description">Generate QR codes for any payment method instantly. Perfect for sharing and mobile payments.</p>
+        <a href="./qr-generator.html" class="qr-btn">
+          Generate QR Codes
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="https://qially.com" class="footer-link">Client Portal</a>
+      <a href="https://qially.me" class="footer-link">Qially.me</a>
+      <a href="./qr-generator.html" class="footer-link">QR Generator</a>
+    </div>
+    <p>&copy; <span id="year">2025</span> QiPay. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Set current year
+    document.getElementById('year').textContent = new Date().getFullYear();
+    
+         // Add some interactive effects
+     document.addEventListener('DOMContentLoaded', function() {
+       const cards = document.querySelectorAll('.payment-card');
+       
+       // Parallax effect on mouse move
+       document.addEventListener('mousemove', function(e) {
+         const x = e.clientX / window.innerWidth;
+         const y = e.clientY / window.innerHeight;
+         
+         cards.forEach((card, index) => {
+           const delay = index * 0.1;
+           const rotateX = (y - 0.5) * 3;
+           const rotateY = (x - 0.5) * 3;
+           card.style.transform = `translateY(-8px) perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+         });
+       });
+       
+       // Reset transform on mouse leave
+       document.addEventListener('mouseleave', function() {
+         cards.forEach(card => {
+           card.style.transform = 'translateY(0px) perspective(1000px) rotateX(0deg) rotateY(0deg)';
+         });
+       });
+
+       // Generate QR codes for all payment methods
+       const qrCodes = {
+         'cashapp-qr': 'https://cash.app/$srv1ne',
+         'zelle-qr': 'mailto:crice4485@gmail.com',
+         'paypal-qr': 'https://www.paypal.com/qrcodes/p2pqrc/EVS7WXML8S3ZL',
+         'square-qr': 'https://square.link/u/qTkK6YbH?src=embed',
+         'stripe-qr': '#', // Placeholder for Stripe
+         'quickbooks-qr': '#', // Placeholder for QuickBooks
+         'ebay-qr': 'https://www.ebay.com/usr/codyr.me',
+         'zoho-qr': '#', // Placeholder for Zoho
+         'gofundme-qr': 'https://www.gofundme.com/f/breaking-silence-i-need-your-help-to-survive/donate?attribution_id=sl%3Af675e7e8-b610-4927-9308-f63235aa29c7&utm_campaign=unknown&utm_medium=undefined&utm_source=undefined'
+       };
+
+       // Generate each QR code
+       Object.entries(qrCodes).forEach(([elementId, url]) => {
+         const element = document.getElementById(elementId);
+         if (element && url !== '#') {
+           QRCode.toCanvas(element, url, {
+             width: 100,
+             margin: 2,
+             color: {
+               dark: '#000000',
+               light: '#FFFFFF'
+             }
+           }, function (error) {
+             if (error) {
+               console.error('Error generating QR code for', elementId, error);
+             }
+           });
+         }
+       });
+     });
+  </script>
+</body>
+</html>
